@@ -9,23 +9,7 @@ try:
     SERP_API_KEY = st.secrets["SERP_API_KEY"]
 except KeyError:
     st.error("Error: Missing API keys. Please add OPENAI_API_KEY and SERP_API_KEY to your secrets.")
-    st.stop()[     UTC     ] Logs for book-reviewer-app.streamlit.app/
-    
-    ────────────────────────────────────────────────────────────────────────────────────────
-    
-    [19:51:14] 🚀 Starting up repository: 'book-reviewer-app', branch: 'main', main module: 'book_reviewer_app.py'
-    
-    [19:51:14] 🐙 Cloning repository...
-    
-    [19:51:14] 🐙 Cloning into '/mount/src/book-reviewer-app'...
-    
-    [19:51:15] 🐙 Cloned repository!
-    
-    [19:51:15] 🐙 Pulling code changes from Github...
-    
-    [19:51:15] ❗️ The main module file does not exist: /mount/src/book-reviewer-app/book_reviewer_app.py
-    
-    [19:51:15] ❗️ Error during processing dependencies! Please fix the error and push an update, o
+    st.stop()
 
 # Configure the APIs
 openai.api_key = OPENAI_API_KEY
