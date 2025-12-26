@@ -1,15 +1,24 @@
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
+
 import streamlit as st
 import openai
 from serpapi import GoogleSearch
 
 # --- Configuration ---
-# Securely fetch secrets
+# Import API keys from config file (for local development)
+# Falls back to environment variables (for GitHub/Streamlit Cloud deployment)
 try:
-    OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
-    SERP_API_KEY = st.secrets["SERP_API_KEY"]
-except KeyError:
-    st.error("Error: Missing API keys. Please add OPENAI_API_KEY and SERP_API_KEY to your secrets.")
-    st.stop()
+    from config.config import OPENAI_API_KEY, SERP_API_KEY
+except (ImportError, ModuleNotFoundError):
+    # Fallback to environment variables for GitHub/Streamlit Cloud
+    OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+    SERP_API_KEY = os.getenv('SERP_API_KEY')
+    
+    if not OPENAI_API_KEY or not SERP_API_KEY:
+        st.error("❌ API keys not found. Please set OPENAI_API_KEY and SERP_API_KEY in config file or environment variables.")
+        st.stop()
 
 # Configure the APIs
 openai.api_key = OPENAI_API_KEY
@@ -53,8 +62,8 @@ def search_book_reviews(book_title):
         return None
 
 def analyze_book_reviews(book_title, reviews_text):
-    """Analyzes book reviews using GPT-4o to generate a summary, sentiment, rating, and recommendation."""
-    st.info("🤖 Analyzing reviews with GPT-4o...")
+    """Analyzes book reviews using GPT-4o-mini to generate a summary, sentiment, rating, and recommendation."""
+    st.info("🤖 Analyzing reviews with GPT-4o-mini...")
     try:
         client = openai.OpenAI(api_key=OPENAI_API_KEY)
         
@@ -64,7 +73,7 @@ def analyze_book_reviews(book_title, reviews_text):
         ]
         
         response = client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-4o-mini",
             messages=prompt_messages,
             temperature=0.7,
             max_tokens=800
@@ -74,57 +83,27 @@ def analyze_book_reviews(book_title, reviews_text):
         st.error(f"Failed to analyze book reviews with OpenAI: {e}")
         return None
 
-# --- Password Protection ---
-def check_password():
-    """Returns `True` if the user had the correct password."""
-
-    def password_entered():
-        """Checks whether a password entered by the user is correct."""
-        if st.session_state["password"] == st.secrets["password"]:
-            st.session_state["password_correct"] = True
-            del st.session_state["password"]  # don't store password
-        else:
-            st.session_state["password_correct"] = False
-
-    if "password_correct" not in st.session_state:
-        # First run, show input for password.
-        st.text_input(
-            "Password", type="password", on_change=password_entered, key="password"
-        )
-        return False
-    elif not st.session_state["password_correct"]:
-        # Password not correct, show input + error.
-        st.text_input(
-            "Password", type="password", on_change=password_entered, key="password"
-        )
-        st.error("😕 Password incorrect")
-        return False
-    else:
-        # Password correct.
-        return True
-
 # --- Streamlit UI ---
 st.set_page_config(page_title="AI Book Reviewer & Recommender", layout="centered")
 
-if check_password():
-    st.title("📚 AI Book Reviewer & Recommender")
-    st.write("Enter a book title, and let AI provide a summary, review analysis, and recommendation.")
+st.title("📚 AI Book Reviewer & Recommender")
+st.write("Enter a book title, and let AI provide a summary, review analysis, and recommendation.")
 
-    book_title_prompt = st.text_input("Enter the title of the book", key="book_title_input")
-    analyze_button = st.button("Analyze Book")
+book_title_prompt = st.text_input("Enter the title of the book", key="book_title_input")
+analyze_button = st.button("Analyze Book")
 
-    if analyze_button and book_title_prompt:
-        with st.spinner(f"Compiling a report for '{book_title_prompt}'... This may take a moment."):
-            # Step 1: Search for reviews
-            review_snippets = search_book_reviews(book_title_prompt)
-            
-            if review_snippets:
-                # Step 2: Analyze the reviews with AI
-                analysis_result = analyze_book_reviews(book_title_prompt, review_snippets)
+if analyze_button and book_title_prompt:
+    with st.spinner(f"Compiling a report for '{book_title_prompt}'... This may take a moment."):
+        # Step 1: Search for reviews
+        review_snippets = search_book_reviews(book_title_prompt)
+        
+        if review_snippets:
+            # Step 2: Analyze the reviews with AI
+            analysis_result = analyze_book_reviews(book_title_prompt, review_snippets)
 
-                if analysis_result:
-                    st.success("Analysis Complete!")
-                    st.markdown(analysis_result)
+            if analysis_result:
+                st.success("Analysis Complete!")
+                st.markdown(analysis_result)
 
-    elif analyze_button and not book_title_prompt:
-        st.warning("Please enter a book title first.") 
+elif analyze_button and not book_title_prompt:
+    st.warning("Please enter a book title first.") 
