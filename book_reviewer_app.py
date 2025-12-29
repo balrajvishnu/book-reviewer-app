@@ -63,7 +63,6 @@ def search_book_reviews(book_title):
 
 def analyze_book_reviews(book_title, reviews_text):
     """Analyzes book reviews using GPT-4o-mini to generate a summary, sentiment, rating, and recommendation."""
-    st.info("🤖 Analyzing reviews with GPT-4o-mini...")
     try:
         client = openai.OpenAI(api_key=OPENAI_API_KEY)
         
